@@ -1,6 +1,6 @@
 # 🐕 Greyhound TrueSkill Analytics Dashboard
 
-An interactive Streamlit dashboard for analyzing greyhound racing performance using the TrueSkill rating system. Built to analyze UK greyhound racing data from Betfair historical files.
+An interactive Streamlit dashboard for analyzing greyhound racing performance using the [TrueSkill](https://trueskill.org/) rating system. Built to analyze UK greyhound racing data from Betfair historical files.
 
 ![Dashboard Preview](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
@@ -121,50 +121,6 @@ This dashboard is ideal for:
 - **Track analysis**: Understand venue-specific performance
 - **Historical research**: Explore head-to-head matchups
 
-## 🛠️ Technical Details
-
-### Dependencies
-- **Streamlit**: Interactive web dashboard
-- **TrueSkill**: Rating system algorithm
-- **Plotly**: Interactive visualizations
-- **Pandas**: Data manipulation
-- **BetfairLightweight**: Betfair API integration
-
-### Data Processing
-- Processes Betfair historical race data
-- Calculates TrueSkill ratings using Bayesian inference
-- Handles race results, trap positions, and timestamps
-- Caches calculations for performance
-
-### Performance
-- Smart caching reduces subsequent load times
-- Handles datasets with 25,000+ races
-- Optimized for interactive exploration
-
-## 📝 Data Requirements
-
-The dashboard works with:
-- **Betfair historical data files** (BASIC format)
-- **Processed CSV files** from the analysis pipeline
-- **Date range**: 2025-01-01 to present (configurable)
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## 📄 License
-
-This project is for educational and research purposes. Please ensure compliance with data usage terms.
-
-## 🎉 Acknowledgments
-
-- Built with the [TrueSkill algorithm](https://www.microsoft.com/en-us/research/project/trueskill-ranking-system/) developed by Microsoft Research
-- Designed for UK greyhound racing analysis
-- Powered by Streamlit for interactive data exploration
-
 ---
 
-**Made with ❤️ for greyhound racing analytics**
+**Made to help Brontë gamble on her 30th**
