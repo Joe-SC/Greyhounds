@@ -1,4 +1,6 @@
 /certs/credentials.json
-/betfair_data/ss
+
+# everything in betfair_data
+/betfair_data/
 
 *.bz2
