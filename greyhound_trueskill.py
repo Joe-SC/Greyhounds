@@ -86,9 +86,9 @@ class GreyhoundTrueSkill:
         return self.ratings[dog_name]
     
     def get_conservative_rating(self, dog_name: str) -> float:
-        """Get conservative rating estimate (mu - 3*sigma)"""
+        """Get conservative rating estimate (mu - 2*sigma)"""
         rating = self.ratings[dog_name]
-        return rating.mu - 3 * rating.sigma
+        return rating.mu - 2 * rating.sigma
     
     def get_skill_estimate(self, dog_name: str) -> float:
         """Get skill estimate (just mu)"""
@@ -132,7 +132,7 @@ class GreyhoundTrueSkill:
                     'dog_name': dog_name,
                     'skill': rating.mu,
                     'uncertainty': rating.sigma,
-                    'conservative': rating.mu - 3 * rating.sigma,
+                    'conservative': rating.mu - 2 * rating.sigma,
                     'races': race_counts[dog_name]
                 })
         
@@ -214,7 +214,7 @@ class TrueSkillProcessor:
         axes[1].barh(range(len(top_dogs)), top_dogs['conservative'])
         axes[1].set_yticks(range(len(top_dogs)))
         axes[1].set_yticklabels(top_dogs['dog_name'])
-        axes[1].set_xlabel('Conservative Rating (μ - 3σ)')
+        axes[1].set_xlabel('Conservative Rating (μ - 2σ)')
         axes[1].set_title('Top Dogs by Conservative Rating')
         
         plt.tight_layout()
