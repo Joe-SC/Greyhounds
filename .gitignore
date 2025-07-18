@@ -1,1 +1,4 @@
 /certs/credentials.json
+/betfair_data/ss
+
+*.bz2
