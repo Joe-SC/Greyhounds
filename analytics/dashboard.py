@@ -333,6 +333,7 @@ class GreyhoundDashboard:
         display_df['skill'] = display_df['skill'].round(2)
         display_df['uncertainty'] = display_df['uncertainty'].round(2)
         display_df['conservative'] = display_df['conservative'].round(2)
+        display_df['wins'] = display_df['wins'].astype(int)  # Convert to integer
         display_df['win_rate'] = (display_df['win_rate'] * 100).round(1)  # Convert to percentage
         
         display_df.columns = ['Dog Name', 'Rank', 'Skill (μ)', 'Uncertainty (σ)', 'Conservative', 'Races', 'Wins', 'Win Rate (%)']
