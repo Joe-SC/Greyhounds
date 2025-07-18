@@ -161,7 +161,7 @@ This project is for educational and research purposes. Please ensure compliance 
 
 ## 🎉 Acknowledgments
 
-- Built with the [TrueSkill algorithm](https://trueskill.org/) developed by Microsoft Research
+- Built with the [TrueSkill algorithm](https://www.microsoft.com/en-us/research/project/trueskill-ranking-system/) developed by Microsoft Research
 - Designed for UK greyhound racing analysis
 - Powered by Streamlit for interactive data exploration
 

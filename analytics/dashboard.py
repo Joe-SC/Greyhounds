@@ -38,9 +38,11 @@ class GreyhoundDashboard:
     
     def run(self):
         """Main dashboard application."""
-        st.title("🐕 Greyhound TrueSkill Analytics Dashboard")
-        st.markdown("Interactive analysis of greyhound racing performance using TrueSkill ratings")
-        
+        st.title("🐕 Greyhound TrueSkill")
+        st.markdown("""
+Interactive analysis of greyhound racing performance using [TrueSkill](https://www.microsoft.com/en-us/research/project/trueskill-ranking-system/) ratings.\n
+Made by Joe to help Brontë gamble on her birthday.
+        """)
         # Sidebar for controls
         self.render_sidebar()
         
