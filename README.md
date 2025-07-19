@@ -22,61 +22,15 @@ An interactive Streamlit dashboard for analyzing greyhound racing performance us
 - Compare multiple dogs side-by-side
 - Perfect for race field analysis
 - Head-to-head race history
-- Visual rating comparisons with radar charts
 
 ### 🏟️ **Venue Performance Analysis**
 - Track-by-track performance metrics
 - Average winner skill by venue
 - Comprehensive venue statistics
 
-### ⚡ **Smart Caching**
-- File-based caching for faster subsequent runs
-- Automatic data processing and storage
-- Optimized for large datasets
-
-## 🚀 Quick Start
-
-### Local Development
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/your-username/greyhounds.git
-   cd greyhounds
-   ```
-
-2. **Install dependencies with Poetry:**
-   ```bash
-   poetry install
-   poetry shell
-   ```
-
-3. **Run the dashboard:**
-   ```bash
-   python run_dashboard.py
-   ```
-
-4. **Open your browser to:** `http://localhost:8501`
-
 ### 🌐 Live Demo
 
 Visit the live dashboard: [**Greyhound TrueSkill Analytics**](https://your-app-name.streamlit.app)
-
-## 📁 Project Structure
-
-```
-greyhounds/
-├── analytics/                  # Dashboard modules
-│   ├── __init__.py
-│   ├── dashboard.py           # Main Streamlit app
-│   ├── data_loader.py         # Data loading & caching
-│   └── visualizations.py     # Plotly charts
-├── betfair_parser.py          # Betfair data parsing
-├── greyhound_trueskill.py     # TrueSkill implementation
-├── run_dashboard.py           # Dashboard runner script
-├── demo.ipynb               # Analysis demonstration
-├── race_data_*.csv          # Race data files
-└── cache/                   # Cached calculations
-```
 
 ## 🎮 How to Use
 
