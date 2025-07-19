@@ -326,7 +326,7 @@ Made by Joe to help Brontë gamble on her birthday.
         # Comparison table
         st.subheader("📊 Rating Comparison")
         
-        # Calculate wins, win rates, and percentiles for each dog
+        # Calculate wins, win rates, percentiles, and last win for each dog
         comparison_df_enhanced = comparison_df.copy()
         total_dogs = len(leaderboard)
         
@@ -342,13 +342,26 @@ Made by Joe to help Brontë gamble on her birthday.
                 rank = dog['rank']
                 percentile = ((total_dogs - rank + 1) / total_dogs) * 100
                 comparison_df_enhanced.loc[idx, 'percentile'] = percentile
+                
+                # Find last win
+                if 'race_time' in dog_races.columns:
+                    dog_races['race_time'] = pd.to_datetime(dog_races['race_time'])
+                    wins_only = dog_races[dog_races['is_winner'] == True]
+                    if not wins_only.empty:
+                        last_win = wins_only['race_time'].max()
+                        comparison_df_enhanced.loc[idx, 'last_win'] = last_win.strftime('%d/%m/%Y')
+                    else:
+                        comparison_df_enhanced.loc[idx, 'last_win'] = 'Never'
+                else:
+                    comparison_df_enhanced.loc[idx, 'last_win'] = 'Unknown'
             else:
                 comparison_df_enhanced.loc[idx, 'wins'] = 0
                 comparison_df_enhanced.loc[idx, 'win_rate'] = 0
                 comparison_df_enhanced.loc[idx, 'percentile'] = 0
+                comparison_df_enhanced.loc[idx, 'last_win'] = 'Never'
         
         # Prepare display data
-        display_cols = ['dog_name', 'rank', 'percentile', 'skill', 'uncertainty', 'conservative', 'races', 'wins', 'win_rate']
+        display_cols = ['dog_name', 'rank', 'percentile', 'skill', 'uncertainty', 'conservative', 'races', 'wins', 'win_rate', 'last_win']
         display_df = comparison_df_enhanced[display_cols].copy()
         
         # Apply exact formatting for each column
@@ -359,7 +372,7 @@ Made by Joe to help Brontë gamble on her birthday.
         display_df['wins'] = display_df['wins'].astype(int)
         display_df['win_rate'] = (display_df['win_rate'].astype(float) * 100).round(1)
         
-        display_df.columns = ['Dog Name', 'Rank', 'Top %', 'Skill (μ)', 'Uncertainty (σ)', 'Conservative (μ - 2σ)', 'Races', 'Wins', 'Win Rate (%)']
+        display_df.columns = ['Dog Name', 'Rank', 'Top %', 'Skill (μ)', 'Uncertainty (σ)', 'Conservative (μ - 2σ)', 'Races', 'Wins', 'Win Rate (%)', 'Last Win']
         
         # Highlight best values
         def highlight_best(s):
@@ -510,8 +523,28 @@ Made by Joe to help Brontë gamble on her birthday.
         # Add percentile column
         display_df['percentile'] = ((total_dogs - display_df['rank'] + 1) / total_dogs) * 100
         
+        # Add wins and last win columns
+        display_df['wins'] = 0
+        display_df['last_win'] = 'Unknown'
+        for idx, dog in display_df.iterrows():
+            dog_races = df[df['dog_name'] == dog['dog_name']]
+            if not dog_races.empty:
+                # Calculate wins
+                wins = dog_races['is_winner'].sum()
+                display_df.loc[idx, 'wins'] = wins
+                
+                # Find last win date
+                if 'race_time' in dog_races.columns:
+                    dog_races['race_time'] = pd.to_datetime(dog_races['race_time'])
+                    wins_only = dog_races[dog_races['is_winner'] == True]
+                    if not wins_only.empty:
+                        last_win = wins_only['race_time'].max()
+                        display_df.loc[idx, 'last_win'] = last_win.strftime('%d/%m/%Y')
+                    else:
+                        display_df.loc[idx, 'last_win'] = 'Never'
+        
         # Select and reorder columns to match comparison table
-        display_cols = ['dog_name', 'rank', 'percentile', 'skill', 'uncertainty', 'conservative', 'races']
+        display_cols = ['dog_name', 'rank', 'percentile', 'skill', 'uncertainty', 'conservative', 'races', 'wins', 'last_win']
         display_df = display_df[display_cols].copy()
         
         # Apply exact formatting for each column (same as comparison table)
@@ -519,8 +552,9 @@ Made by Joe to help Brontë gamble on her birthday.
         display_df['uncertainty'] = display_df['uncertainty'].astype(float).round(2) 
         display_df['conservative'] = display_df['conservative'].astype(float).round(2)
         display_df['percentile'] = display_df['percentile'].astype(float).round(1)
+        display_df['wins'] = display_df['wins'].astype(int)
         
-        display_df.columns = ['Dog Name', 'Rank', 'Top %', 'Skill (μ)', 'Uncertainty (σ)', 'Conservative (μ - 2σ)', 'Races']
+        display_df.columns = ['Dog Name', 'Rank', 'Top %', 'Skill (μ)', 'Uncertainty (σ)', 'Conservative (μ - 2σ)', 'Races', 'Wins', 'Last Win']
         
         # Apply styling with format preservation (same as comparison table)
         styled_df = display_df.style.format({
