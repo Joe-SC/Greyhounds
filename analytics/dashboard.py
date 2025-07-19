@@ -274,7 +274,7 @@ Made by Joe to help Brontë gamble on her birthday.
                             st.write("**Recent Races:**")
                             for _, race in recent_races.iterrows():
                                 result = "🥇 Won" if race['is_winner'] else f"📍 T{race.get('trap_number', '?')}"
-                                date = race['race_time'].strftime('%m/%d')
+                                date = race['race_time'].strftime('%d/%m')  # British format: day/month
                                 venue = race['venue'][:8]  # Truncate venue name
                                 st.write(f"• {date} - {venue} - {result}")
                 
