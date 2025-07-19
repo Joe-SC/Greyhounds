@@ -64,7 +64,7 @@ Made by Joe to help Brontë gamble on her birthday.
         if st.session_state.get('compare_dogs'):
             self.render_dog_comparison(df, leaderboard)
         
-        self.render_leaderboard_section(leaderboard)
+        self.render_leaderboard_section(df, leaderboard)
         self.render_visualizations(df, leaderboard, venue_stats)
         self.render_detailed_analysis(df, leaderboard)
     
@@ -135,6 +135,14 @@ Made by Joe to help Brontë gamble on her birthday.
             max_value=50,
             value=20
         )
+        
+        # Venue filter (dynamically populated)
+        venue_options = st.session_state.get('venue_options', ["All Venues"])
+        st.session_state.venue_filter = st.sidebar.selectbox(
+            "Filter leaderboard by venue:",
+            options=venue_options,
+            help="Show only dogs that have raced at the selected venue"
+        )
     
     def load_dashboard_data(self):
         """Load data based on user selections."""
@@ -159,6 +167,12 @@ Made by Joe to help Brontë gamble on her birthday.
                 # If no existing ratings, process them
                 if leaderboard.empty and not df.empty:
                     leaderboard, venue_stats = self.data_loader.process_trueskill_ratings(df)
+        
+        # Update venue filter options after data is loaded
+        if not df.empty and 'venue' in df.columns:
+            venues = ["All Venues"] + sorted(df['venue'].unique().tolist())
+            # Update the selectbox options
+            st.session_state.venue_options = venues
         
         return df, leaderboard, venue_stats
     
@@ -448,7 +462,7 @@ Made by Joe to help Brontë gamble on her birthday.
         
         return dog_races[dog_races['market_id'].isin(multi_dog_races)].sort_values('race_time', ascending=False)
     
-    def render_leaderboard_section(self, leaderboard: pd.DataFrame):
+    def render_leaderboard_section(self, df: pd.DataFrame, leaderboard: pd.DataFrame):
         """Render the leaderboard section."""
         st.header("🏆 TrueSkill Leaderboard")
         
@@ -458,10 +472,24 @@ Made by Joe to help Brontë gamble on her birthday.
         
         # Filter by minimum races
         min_races = st.session_state.get('min_races', 2)
-        filtered_leaderboard = leaderboard[leaderboard['races'] >= min_races]
+        filtered_leaderboard = leaderboard[leaderboard['races'] >= min_races].copy()
+        
+        # Filter by venue if selected
+        venue_filter = st.session_state.get('venue_filter', 'All Venues')
+        if venue_filter != 'All Venues' and not df.empty:
+            # Get dogs that have raced at the selected venue
+            venue_dogs = df[df['venue'] == venue_filter]['dog_name'].unique()
+            filtered_leaderboard = filtered_leaderboard[filtered_leaderboard['dog_name'].isin(venue_dogs)]
+            
+            # Update the subtitle to show venue filter
+            if venue_filter:
+                st.info(f"🏟️ Showing dogs that have raced at **{venue_filter}**")
         
         if filtered_leaderboard.empty:
-            st.warning(f"No dogs found with minimum {min_races} races.")
+            if venue_filter != 'All Venues':
+                st.warning(f"No dogs found with minimum {min_races} races at {venue_filter}.")
+            else:
+                st.warning(f"No dogs found with minimum {min_races} races.")
             return
         
         # Display metrics explanation
