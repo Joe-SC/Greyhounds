@@ -616,6 +616,37 @@ Made by Joe to help Brontë gamble on her birthday.
                 with col4:
                     st.metric("% of Bankroll", f"{(total_recommended_bet/bankroll)*100:.1f}%")
                 
+                # Column explanations
+                with st.expander("📚 Understanding the Analysis Table"):
+                    st.markdown("""
+                    ### **TrueSkill Metrics** (from your racing data):
+                    - **Skill (μ)**: The dog's estimated true skill level (higher = better)
+                    - **Uncertainty (σ)**: How confident we are in the rating (lower = more confident)
+                    - **Conservative (μ - 2σ)**: Conservative skill estimate (accounts for uncertainty)
+                    
+                    ### **Probability Analysis**:
+                    - **Est. Win %**: Your model's estimated probability this dog will win
+                    - **Odds**: The market's decimal odds (e.g., 2.5 = 2.5:1 payout)
+                    - **Implied %**: What probability the market odds suggest (1 ÷ odds × 100)
+                    
+                    ### **Value Detection**:
+                    - **Value %**: Your "edge" = Est. Win % - Implied %
+                      - ✅ **Positive** = you think dog is underpriced by market
+                      - ❌ **Negative** = you think dog is overpriced by market
+                    
+                    ### **Kelly Criterion Calculations**:
+                    - **Kelly %**: Optimal bet size according to Kelly formula (can be aggressive)
+                    - **Rec. %**: Recommended bet size (Kelly % capped at your max limit)
+                    - **Bet Amount**: Actual £ amount to bet (Rec. % × your bankroll)
+                    - **Expected Value**: Expected profit/loss from this bet (£)
+                    - **Positive EV**: ✅/❌ Whether this bet has positive expected value
+                    
+                    ### **🎯 Key Rule**: 
+                    Only bet on dogs where **Value %** is positive AND **Positive EV** is True. 
+                    The Kelly Criterion calculates optimal sizing to maximize long-term growth when you have an edge.
+                    """)
+                
+                
                 # Detailed analysis table
                 formatted_analysis = format_betting_analysis(betting_analysis)
                 
