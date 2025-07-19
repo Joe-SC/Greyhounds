@@ -161,3 +161,7 @@ class DataLoader:
         }
         
         return stats
+    
+    def get_trueskill_processor(self):
+        """Get the TrueSkill processor instance."""
+        return self.processor

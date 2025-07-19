@@ -16,10 +16,16 @@ sys.path.insert(0, str(parent_dir))
 try:
     from analytics.data_loader import DataLoader
     from analytics.visualizations import Visualizations
+    from kelly_criterion import KellyCriterion, format_betting_analysis
 except ImportError:
     # Fallback for relative imports
     from data_loader import DataLoader
     from visualizations import Visualizations
+    try:
+        from kelly_criterion import KellyCriterion, format_betting_analysis
+    except ImportError:
+        KellyCriterion = None
+        format_betting_analysis = None
 
 class GreyhoundDashboard:
     """Main dashboard class for the Streamlit app."""
@@ -63,6 +69,10 @@ Made by Joe to help Brontë gamble on her birthday.
         # Show dog comparison if there are dogs to compare
         if st.session_state.get('compare_dogs'):
             self.render_dog_comparison(df, leaderboard)
+        
+        # Show betting tool if enabled
+        if st.session_state.get('enable_betting') and KellyCriterion is not None:
+            self.render_betting_tool(df, leaderboard)
         
         self.render_leaderboard_section(df, leaderboard)
         self.render_visualizations(df, leaderboard, venue_stats)
@@ -117,6 +127,32 @@ Made by Joe to help Brontë gamble on her birthday.
             help="Enter dog names (one per line) to compare their ratings and stats",
             height=100
         )
+        
+        # Kelly Criterion betting tool
+        if KellyCriterion is not None:
+            st.sidebar.subheader("💰 Betting Tool (Kelly Criterion)")
+            st.session_state.enable_betting = st.sidebar.checkbox(
+                "Enable betting analysis",
+                help="Use Kelly Criterion to calculate optimal bet sizes"
+            )
+            
+            if st.session_state.get('enable_betting'):
+                st.session_state.bankroll = st.sidebar.number_input(
+                    "Bankroll (£):",
+                    min_value=1.0,
+                    value=1000.0,
+                    step=50.0,
+                    help="Your total betting bankroll"
+                )
+                
+                st.session_state.max_bet_fraction = st.sidebar.slider(
+                    "Max bet % of bankroll:",
+                    min_value=1.0,
+                    max_value=50.0,
+                    value=25.0,
+                    step=1.0,
+                    help="Maximum percentage of bankroll to bet on any single race"
+                ) / 100
         
         # Filtering options
         st.sidebar.subheader("🔍 Display Filters")
@@ -472,6 +508,192 @@ Made by Joe to help Brontë gamble on her birthday.
         multi_dog_races = race_counts[race_counts >= 2].index
         
         return dog_races[dog_races['market_id'].isin(multi_dog_races)].sort_values('race_time', ascending=False)
+    
+    def render_betting_tool(self, df: pd.DataFrame, leaderboard: pd.DataFrame):
+        """Render the Kelly Criterion betting tool."""
+        st.header("💰 Kelly Criterion Betting Tool")
+        
+        st.info("""
+        **How it works:** This tool uses TrueSkill ratings to estimate win probabilities, 
+        then applies the Kelly Criterion to calculate optimal bet sizes.
+        """)
+        
+        # Input section for race setup
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            st.subheader("🏁 Set Up Race")
+            race_dogs_input = st.text_area(
+                "Enter dogs in the race (one per line):",
+                placeholder="Acomb Felix\nSwift Hostile\nProper Heiress\nRapid Fire\nSpeed Demon",
+                height=150,
+                help="Enter the names of all dogs in the race you want to analyze"
+            )
+        
+        with col2:
+            st.subheader("💷 Market Odds")
+            odds_input = st.text_area(
+                "Enter decimal odds (one per line):",
+                placeholder="2.5\n3.2\n4.0\n8.5\n12.0",
+                height=150,
+                help="Enter the decimal odds for each dog (in same order as dogs)"
+            )
+        
+        if race_dogs_input and odds_input:
+            # Parse inputs
+            race_dogs = [dog.strip() for dog in race_dogs_input.split('\n') if dog.strip()]
+            try:
+                odds_list = [float(odds.strip()) for odds in odds_input.split('\n') if odds.strip()]
+            except ValueError:
+                st.error("Please enter valid decimal odds (e.g., 2.5, 3.0, 4.5)")
+                return
+            
+            if len(race_dogs) != len(odds_list):
+                st.error(f"Number of dogs ({len(race_dogs)}) must match number of odds ({len(odds_list)})")
+                return
+            
+            if len(race_dogs) < 2:
+                st.error("Please enter at least 2 dogs for analysis")
+                return
+            
+            # Check if dogs exist in our data
+            missing_dogs = [dog for dog in race_dogs if dog not in leaderboard['dog_name'].values]
+            if missing_dogs:
+                st.warning(f"⚠️ Dogs not found in ratings: {', '.join(missing_dogs)}")
+                st.info("Dogs not in our database will be assigned default ratings (new dog)")
+            
+            # Create odds dictionary
+            market_odds = dict(zip(race_dogs, odds_list))
+            
+            # Get TrueSkill system from data loader
+            try:
+                # We need to get the TrueSkill processor from data_loader
+                ts_processor = self.data_loader.get_trueskill_processor()
+                if ts_processor is None:
+                    st.error("TrueSkill ratings not available. Please load race data first.")
+                    return
+                
+                # Initialize Kelly calculator
+                kelly_calc = KellyCriterion(ts_processor.trueskill_system)
+                
+                # Get betting parameters
+                bankroll = st.session_state.get('bankroll', 1000)
+                max_fraction = st.session_state.get('max_bet_fraction', 0.25)
+                
+                # Analyze betting opportunities
+                with st.spinner("Calculating optimal bet sizes..."):
+                    betting_analysis = kelly_calc.analyze_race_betting_opportunities(
+                        race_dogs=race_dogs,
+                        market_odds=market_odds,
+                        bankroll=bankroll,
+                        max_fraction=max_fraction
+                    )
+                
+                # Display results
+                st.subheader("📊 Betting Analysis Results")
+                
+                # Summary metrics
+                positive_ev_bets = betting_analysis[betting_analysis['positive_ev'] == True]
+                total_recommended_bet = positive_ev_bets['recommended_bet'].sum()
+                total_expected_value = positive_ev_bets['expected_value'].sum()
+                
+                col1, col2, col3, col4 = st.columns(4)
+                with col1:
+                    st.metric("Positive EV Bets", len(positive_ev_bets))
+                with col2:
+                    st.metric("Total Bet Amount", f"£{total_recommended_bet:.2f}")
+                with col3:
+                    st.metric("Total Expected Value", f"£{total_expected_value:.2f}")
+                with col4:
+                    st.metric("% of Bankroll", f"{(total_recommended_bet/bankroll)*100:.1f}%")
+                
+                # Detailed analysis table
+                formatted_analysis = format_betting_analysis(betting_analysis)
+                
+                # Color code positive EV rows
+                def highlight_positive_ev(row):
+                    if row['Positive EV']:
+                        return ['background-color: rgba(76, 175, 80, 0.2)'] * len(row)
+                    else:
+                        return [''] * len(row)
+                
+                styled_df = formatted_analysis.style.apply(highlight_positive_ev, axis=1)
+                st.dataframe(styled_df, use_container_width=True, hide_index=True)
+                
+                # Recommendations
+                if len(positive_ev_bets) > 0:
+                    st.success("✅ Found positive expected value bets!")
+                    
+                    st.subheader("💡 Betting Recommendations")
+                    for _, bet in positive_ev_bets.iterrows():
+                        with st.container():
+                            col1, col2, col3 = st.columns([2, 1, 1])
+                            with col1:
+                                st.write(f"**{bet['dog_name']}** - Bet £{bet['recommended_bet']:.2f}")
+                            with col2:
+                                st.write(f"EV: £{bet['expected_value']:.2f}")
+                            with col3:
+                                st.write(f"Value: {bet['value']*100:.1f}%")
+                else:
+                    st.warning("❌ No positive expected value bets found in this race")
+                    st.info("This suggests the market odds are efficient or our model disagrees with the market assessment")
+                
+                # Risk simulation
+                if len(positive_ev_bets) > 0:
+                    st.subheader("🎲 Risk Simulation")
+                    
+                    with st.expander("Run Monte Carlo Simulation"):
+                        num_simulations = st.slider("Number of simulations:", 100, 10000, 1000, step=100)
+                        
+                        if st.button("Run Simulation"):
+                            with st.spinner("Running simulation..."):
+                                simulation_results = kelly_calc.bankroll_simulation(
+                                    betting_analysis, 
+                                    initial_bankroll=bankroll,
+                                    num_simulations=num_simulations
+                                )
+                            
+                            if "message" not in simulation_results:
+                                col1, col2 = st.columns(2)
+                                
+                                with col1:
+                                    st.metric("Mean Final Bankroll", f"£{simulation_results['mean_final_bankroll']:.2f}")
+                                    st.metric("Probability of Profit", f"{simulation_results['prob_profit']*100:.1f}%")
+                                    st.metric("5th Percentile", f"£{simulation_results['percentile_5']:.2f}")
+                                
+                                with col2:
+                                    st.metric("Median Final Bankroll", f"£{simulation_results['median_final_bankroll']:.2f}")
+                                    st.metric("Risk of 50% Loss", f"{simulation_results['prob_loss_50pct']*100:.1f}%")
+                                    st.metric("95th Percentile", f"£{simulation_results['percentile_95']:.2f}")
+                            else:
+                                st.warning(simulation_results["message"])
+                
+                # Educational content
+                with st.expander("📚 Understanding the Kelly Criterion"):
+                    st.markdown("""
+                    **Kelly Criterion Formula:** f = (bp - q) / b
+                    
+                    Where:
+                    - f = fraction of bankroll to bet
+                    - b = odds - 1 (net odds)
+                    - p = probability of winning
+                    - q = probability of losing (1 - p)
+                    
+                    **Key Points:**
+                    - Only bet when you have an edge (positive expected value)
+                    - Bet size is proportional to your edge
+                    - Maximizes long-term growth rate
+                    - Can be aggressive - consider fractional Kelly (25-50%) for reduced risk
+                    
+                    **TrueSkill Integration:**
+                    - Uses dog ratings (μ) as strength estimates
+                    - Applies softmax to convert to win probabilities
+                    - Temperature scaling accounts for rating uncertainty
+                    """)
+                
+            except Exception as e:
+                st.error(f"Error calculating betting analysis: {str(e)}")
+                st.info("Make sure you have loaded race data and TrueSkill ratings are available")
     
     def render_leaderboard_section(self, df: pd.DataFrame, leaderboard: pd.DataFrame):
         """Render the leaderboard section."""

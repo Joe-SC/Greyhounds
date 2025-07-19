@@ -110,6 +110,38 @@ class GreyhoundTrueSkill:
         denom = np.sqrt(2 * (ts.beta ** 2) + sum_sigma)
         return ts.cdf(delta_mu / denom)
     
+    def predict_race_win_probabilities(self, dog_names: list[str]) -> dict[str, float]:
+        """
+        Predict win probability for each dog in a multi-dog race
+        
+        Uses Bradley-Terry model with TrueSkill ratings to estimate
+        the probability each dog finishes first.
+        
+        Args:
+            dog_names: List of dogs in the race
+            
+        Returns:
+            Dictionary mapping dog_name -> win_probability
+        """
+        if len(dog_names) < 2:
+            raise ValueError("Need at least 2 dogs for race probability calculation")
+        
+        # Get ratings for all dogs
+        ratings = {dog: self.ratings[dog] for dog in dog_names}
+        
+        # Use expected performance (μ) as strength parameter
+        strengths = np.array([ratings[dog].mu for dog in dog_names])
+        
+        # Apply softmax to convert to probabilities
+        # Use temperature scaling based on average uncertainty
+        avg_uncertainty = np.mean([ratings[dog].sigma for dog in dog_names])
+        temperature = max(1.0, avg_uncertainty)  # Scale by uncertainty
+        
+        exp_strengths = np.exp(strengths / temperature)
+        probabilities = exp_strengths / np.sum(exp_strengths)
+        
+        return {dog: prob for dog, prob in zip(dog_names, probabilities)}
+    
     def get_leaderboard(self, min_races: int = 5, sort_by: str = 'conservative') -> pd.DataFrame:
         """
         Get dog leaderboard
