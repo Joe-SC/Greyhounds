@@ -565,16 +565,25 @@ Made by Joe to help Brontë gamble on her birthday.
             # Create odds dictionary
             market_odds = dict(zip(race_dogs, odds_list))
             
-            # Get TrueSkill system from data loader
+            # Create TrueSkill system from leaderboard data
             try:
-                # We need to get the TrueSkill processor from data_loader
-                ts_processor = self.data_loader.get_trueskill_processor()
-                if ts_processor is None:
-                    st.error("TrueSkill ratings not available. Please load race data first.")
-                    return
+                # Instead of getting a fresh processor, we need to reconstruct the TrueSkill system
+                # from the existing leaderboard data
+                from greyhound_trueskill import GreyhoundTrueSkill
+                import trueskill
+                
+                # Create a TrueSkill system and populate it with ratings from leaderboard
+                ts_system = GreyhoundTrueSkill()
+                
+                # Populate ratings from the leaderboard
+                for _, dog_row in leaderboard.iterrows():
+                    dog_name = dog_row['dog_name']
+                    skill = dog_row['skill']
+                    uncertainty = dog_row['uncertainty']
+                    ts_system.ratings[dog_name] = trueskill.Rating(mu=skill, sigma=uncertainty)
                 
                 # Initialize Kelly calculator
-                kelly_calc = KellyCriterion(ts_processor.trueskill_system)
+                kelly_calc = KellyCriterion(ts_system)
                 
                 # Get betting parameters
                 bankroll = st.session_state.get('bankroll', 1000)
