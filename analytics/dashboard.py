@@ -374,17 +374,17 @@ Made by Joe to help Brontë gamble on her birthday.
         
         display_df.columns = ['Dog Name', 'Rank', 'Top %', 'Skill (μ)', 'Uncertainty (σ)', 'Conservative (μ - 2σ)', 'Races', 'Wins', 'Win Rate (%)', 'Last Win']
         
-        # Highlight best values
+        # Highlight best values with better dark mode support
         def highlight_best(s):
             if s.name in ['Skill (μ)', 'Conservative (μ - 2σ)', 'Races', 'Wins', 'Win Rate (%)', 'Top %']:
                 max_val = s.max()
-                return ['background-color: lightgreen' if v == max_val else '' for v in s]
+                return ['background-color: rgba(76, 175, 80, 0.3); font-weight: bold' if v == max_val else '' for v in s]
             elif s.name == 'Rank':
                 min_val = s.min()
-                return ['background-color: lightgreen' if v == min_val else '' for v in s]
+                return ['background-color: rgba(76, 175, 80, 0.3); font-weight: bold' if v == min_val else '' for v in s]
             elif s.name == 'Uncertainty (σ)':
                 min_val = s.min()
-                return ['background-color: lightgreen' if v == min_val else '' for v in s]
+                return ['background-color: rgba(76, 175, 80, 0.3); font-weight: bold' if v == min_val else '' for v in s]
             else:
                 return [''] * len(s)
         
