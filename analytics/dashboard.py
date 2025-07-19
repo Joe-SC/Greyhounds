@@ -314,8 +314,10 @@ Made by Joe to help Brontë gamble on her birthday.
         # Comparison table
         st.subheader("📊 Rating Comparison")
         
-        # Calculate wins and win rates for each dog
+        # Calculate wins, win rates, and percentiles for each dog
         comparison_df_enhanced = comparison_df.copy()
+        total_dogs = len(leaderboard)
+        
         for idx, dog in comparison_df_enhanced.iterrows():
             dog_races = df[df['dog_name'] == dog['dog_name']]
             if not dog_races.empty:
@@ -323,26 +325,33 @@ Made by Joe to help Brontë gamble on her birthday.
                 win_rate = wins / len(dog_races)
                 comparison_df_enhanced.loc[idx, 'wins'] = wins
                 comparison_df_enhanced.loc[idx, 'win_rate'] = win_rate
+                
+                # Calculate percentile (what % of dogs this dog is better than)
+                rank = dog['rank']
+                percentile = ((total_dogs - rank + 1) / total_dogs) * 100
+                comparison_df_enhanced.loc[idx, 'percentile'] = percentile
             else:
                 comparison_df_enhanced.loc[idx, 'wins'] = 0
                 comparison_df_enhanced.loc[idx, 'win_rate'] = 0
+                comparison_df_enhanced.loc[idx, 'percentile'] = 0
         
         # Prepare display data
-        display_cols = ['dog_name', 'rank', 'skill', 'uncertainty', 'conservative', 'races', 'wins', 'win_rate']
+        display_cols = ['dog_name', 'rank', 'percentile', 'skill', 'uncertainty', 'conservative', 'races', 'wins', 'win_rate']
         display_df = comparison_df_enhanced[display_cols].copy()
         
-        # Round numeric columns
-        display_df['skill'] = display_df['skill'].round(2)
-        display_df['uncertainty'] = display_df['uncertainty'].round(2)
-        display_df['conservative'] = display_df['conservative'].round(2)
-        display_df['wins'] = display_df['wins'].astype(int)  # Convert to integer
-        display_df['win_rate'] = (display_df['win_rate'] * 100).round(1)  # Convert to percentage
+        # Apply exact formatting for each column
+        display_df['skill'] = display_df['skill'].astype(float).round(2)
+        display_df['uncertainty'] = display_df['uncertainty'].astype(float).round(2) 
+        display_df['conservative'] = display_df['conservative'].astype(float).round(2)
+        display_df['percentile'] = display_df['percentile'].astype(float).round(1)
+        display_df['wins'] = display_df['wins'].astype(int)
+        display_df['win_rate'] = (display_df['win_rate'].astype(float) * 100).round(1)
         
-        display_df.columns = ['Dog Name', 'Rank', 'Skill (μ)', 'Uncertainty (σ)', 'Conservative', 'Races', 'Wins', 'Win Rate (%)']
+        display_df.columns = ['Dog Name', 'Rank', 'Top %', 'Skill (μ)', 'Uncertainty (σ)', 'Conservative (μ - 2σ)', 'Races', 'Wins', 'Win Rate (%)']
         
         # Highlight best values
         def highlight_best(s):
-            if s.name in ['Skill (μ)', 'Conservative', 'Races', 'Wins', 'Win Rate (%)']:
+            if s.name in ['Skill (μ)', 'Conservative (μ - 2σ)', 'Races', 'Wins', 'Win Rate (%)', 'Top %']:
                 max_val = s.max()
                 return ['background-color: lightgreen' if v == max_val else '' for v in s]
             elif s.name == 'Rank':
@@ -354,7 +363,14 @@ Made by Joe to help Brontë gamble on her birthday.
             else:
                 return [''] * len(s)
         
-        styled_df = display_df.style.apply(highlight_best, axis=0)
+        # Apply styling with format preservation
+        styled_df = display_df.style.apply(highlight_best, axis=0).format({
+            'Skill (μ)': '{:.2f}',
+            'Uncertainty (σ)': '{:.2f}',
+            'Conservative (μ - 2σ)': '{:.2f}',
+            'Top %': '{:.1f}%',
+            'Win Rate (%)': '{:.1f}%'
+        })
         st.dataframe(styled_df, use_container_width=True, hide_index=True)
         
         # Visualization comparison
@@ -461,12 +477,35 @@ Made by Joe to help Brontë gamble on her birthday.
         top_n = st.session_state.get('top_n_dogs', 20)
         st.subheader(f"Top {top_n} Dogs (min {min_races} races)")
         
-        # Format the display
+        # Calculate percentiles and format the display to match comparison table
         display_df = filtered_leaderboard.head(top_n).copy()
-        display_df = display_df.round(2)
+        total_dogs = len(leaderboard)
+        
+        # Add percentile column
+        display_df['percentile'] = ((total_dogs - display_df['rank'] + 1) / total_dogs) * 100
+        
+        # Select and reorder columns to match comparison table
+        display_cols = ['dog_name', 'rank', 'percentile', 'skill', 'uncertainty', 'conservative', 'races']
+        display_df = display_df[display_cols].copy()
+        
+        # Apply exact formatting for each column (same as comparison table)
+        display_df['skill'] = display_df['skill'].astype(float).round(2)
+        display_df['uncertainty'] = display_df['uncertainty'].astype(float).round(2) 
+        display_df['conservative'] = display_df['conservative'].astype(float).round(2)
+        display_df['percentile'] = display_df['percentile'].astype(float).round(1)
+        
+        display_df.columns = ['Dog Name', 'Rank', 'Top %', 'Skill (μ)', 'Uncertainty (σ)', 'Conservative (μ - 2σ)', 'Races']
+        
+        # Apply styling with format preservation (same as comparison table)
+        styled_df = display_df.style.format({
+            'Skill (μ)': '{:.2f}',
+            'Uncertainty (σ)': '{:.2f}',
+            'Conservative (μ - 2σ)': '{:.2f}',
+            'Top %': '{:.1f}%'
+        })
         
         st.dataframe(
-            display_df,
+            styled_df,
             use_container_width=True,
             hide_index=True
         )
