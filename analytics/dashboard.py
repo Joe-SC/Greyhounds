@@ -43,11 +43,11 @@ class GreyhoundDashboard:
 Interactive analysis of greyhound racing performance using [TrueSkill](https://www.microsoft.com/en-us/research/project/trueskill-ranking-system/) ratings.\n
 Made by Joe to help Brontë gamble on her birthday.
         """)
-        # Sidebar for controls
-        self.render_sidebar()
-        
-        # Load data based on user selection
+        # Load data first to get venue options
         df, leaderboard, venue_stats = self.load_dashboard_data()
+        
+        # Render sidebar with venue options available
+        self.render_sidebar(df)
         
         if df.empty:
             st.warning("No data available. Please check your data sources or date range.")
@@ -68,7 +68,7 @@ Made by Joe to help Brontë gamble on her birthday.
         self.render_visualizations(df, leaderboard, venue_stats)
         self.render_detailed_analysis(df, leaderboard)
     
-    def render_sidebar(self):
+    def render_sidebar(self, df: pd.DataFrame):
         """Render the sidebar controls."""
         st.sidebar.header("📊 Dashboard Controls")
         
@@ -136,8 +136,12 @@ Made by Joe to help Brontë gamble on her birthday.
             value=20
         )
         
-        # Venue filter (dynamically populated)
-        venue_options = st.session_state.get('venue_options', ["All Venues"])
+        # Venue filter (dynamically populated from loaded data)
+        if not df.empty and 'venue' in df.columns:
+            venue_options = ["All Venues"] + sorted(df['venue'].unique().tolist())
+        else:
+            venue_options = ["All Venues"]
+            
         st.session_state.venue_filter = st.sidebar.selectbox(
             "Filter leaderboard by venue:",
             options=venue_options,
@@ -167,12 +171,6 @@ Made by Joe to help Brontë gamble on her birthday.
                 # If no existing ratings, process them
                 if leaderboard.empty and not df.empty:
                     leaderboard, venue_stats = self.data_loader.process_trueskill_ratings(df)
-        
-        # Update venue filter options after data is loaded
-        if not df.empty and 'venue' in df.columns:
-            venues = ["All Venues"] + sorted(df['venue'].unique().tolist())
-            # Update the selectbox options
-            st.session_state.venue_options = venues
         
         return df, leaderboard, venue_stats
     
