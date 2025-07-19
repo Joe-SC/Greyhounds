@@ -30,7 +30,7 @@ An interactive Streamlit dashboard for analyzing greyhound racing performance us
 
 ### 🌐 Live Demo
 
-Visit the live dashboard: [**Greyhound TrueSkill Analytics**](https://your-app-name.streamlit.app)
+Visit the live dashboard: **[Greyhound TrueSkill](https://greyhound-truskill.streamlit.app/)**
 
 ## 🎮 How to Use
 
