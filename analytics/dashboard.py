@@ -626,7 +626,21 @@ Made by Joe to help Brontë gamble on her birthday.
                     else:
                         return [''] * len(row)
                 
-                styled_df = formatted_analysis.style.apply(highlight_positive_ev, axis=1)
+                # Apply styling with format preservation (match dashboard pattern)
+                styled_df = formatted_analysis.style.apply(highlight_positive_ev, axis=1).format({
+                    'Skill (μ)': '{:.2f}',
+                    'Uncertainty (σ)': '{:.2f}',
+                    'Conservative (μ - 2σ)': '{:.2f}',
+                    'Est. Win %': '{:.1f}%',
+                    'Odds': '{:.1f}',
+                    'Implied %': '{:.1f}%',
+                    'Value %': '{:.1f}%',
+                    'Kelly %': '{:.1f}%',
+                    'Rec. %': '{:.1f}%',
+                    'Bet Amount': '£{:.2f}',
+                    'Expected Value': '£{:.2f}'
+                })
+                
                 st.dataframe(styled_df, use_container_width=True, hide_index=True)
                 
                 # Recommendations
